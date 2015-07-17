@@ -1,0 +1,80 @@
+# --------------------------------
+#   Basic options
+# --------------------------------
+# Should zabbix role manage it's own dependencies (database, web server)?
+zabbix_server_dependencies: True
+
+
+# --------------------------------
+#   Default Variables
+# --------------------------------
+zabbix_server_main_domain: [ 'zabbix.{{ ansible_domain }}' ]
+zabbix_server_packages: ['zabbix-server-{{zabbix_server_database_connector}}','zabbix-frontend-php']
+
+# Basic Auth realm displayed in the login dialog
+zabbix_server_nginx_auth_realm: 'Zabbix access is restricted'
+
+# Access policy defined using ``debops.nginx`` role, applied to this Zabbix
+zabbix_server_nginx_access_policy: ''
+
+# Zabbix system user account
+zabbix_server_user: 'www-data'
+
+# Zabbix system user group
+zabbix_server_group: 'www-data'
+
+# --------------------------------
+#   Database settings
+# --------------------------------
+# Valid connector names pgsql, mysql
+# Valid ports psgql: 5432, mysql: 3306
+zabbix_server_database_connector: 'pgsql'
+zabbix_server_database_port: '5432' 
+zabbix_server_database_hostname: 'localhost'
+zabbix_server_database_database: 'zabbix'
+zabbix_server_database_username: 'zabbix'
+zabbix_server_database_password: ''
+
+# --------------------------------
+#   Zabbix Server Configuration
+# --------------------------------
+zabbix_server_host: 'localhost'
+zabbix_server_port: '10051'
+zabbix_server_ListenIP: '0.0.0.0'
+zabbix_server_DebugLevel: '3'
+zabbix_server_StartIPMIPollers: '0'
+zabbix_server_StartPollersUnreachable: '1'
+zabbix_server_StartTrappers: '5'
+zabbix_server_StartPingers: '1'
+zabbix_server_StartDiscoverers: '1'
+zabbix_server_StartHTTPPollers: '1'
+zabbix_server_StartTimers: '1'
+zabbix_StartVMwareCollectors: '0'
+zabbix_server_VMwareFrequency: '60'
+zabbix_server_VMwareCacheSize: '8M'
+zabbix_server_EnableSNMPBulkRequests: '1'
+zabbix_server_SNMPTrappersFile: '/tmp/zabbix_traps.tmp'
+zabbix_server_StartSNMPTrapper: '0'
+zabbix_server_HousekeepingFrequency: '1'
+zabbix_server_MaxHousekeeperDelete: '500'
+zabbix_server_SenderFrequency: '30'
+zabbix_server_CacheSize: '8M'
+zabbix_server_CacheUpdateFrequency: '60'
+zabbix_server_StartDBSyncers: '4'
+zabbix_server_HistoryCacheSize: '8M'
+zabbix_server_TrendCacheSize: '4M'
+zabbix_server_HistoryTextCacheSize: '16M'
+zabbix_server_ValueCacheSize: '8M'
+zabbix_server_NodeNoEvents: '0'
+zabbix_server_NodeNoHistory: '0'
+zabbix_server_Timeout: '3'
+zabbix_server_TrapperTimeout: '300'
+zabbix_server_UnreachablePeriod: '45'
+zabbix_server_UnavailableDelay: '60'
+zabbix_server_UnreachableDelay: '15'
+zabbix_server_LogSlowQueries: '0'
+zabbix_server_TmpDir: '/tmp'
+zabbix_server_StartProxyPollers: '1'
+zabbix_server_ProxyConfigFrequency: '3600'
+zabbix_server_ProxyDataFrequency: '1'
+zabbix_server_AllowRoot: '0'

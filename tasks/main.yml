@@ -1,0 +1,97 @@
+# ---- Requirements ----
+
+- name: Install requested packages
+  apt:
+    name: '{{ item }}'
+    state: 'present'
+    install_recommends: False
+  with_items: zabbix_server_packages
+
+#
+- name: Set default database password
+  set_fact:
+    gitlab_database_password: ""
+
+- name: Get database password from MySQL secrets
+  set_fact:
+    zabbix_server_database_password: '{{ lookup("password",secret + "/credentials/" + ansible_fqdn + "/mysql/" + zabbix_server_database_username + "/password") }}'
+  when: (secret is defined and secret) and (zabbix_server_database_connector is defined and zabbix_server_database_connector and zabbix_server_database_connector == 'mysql')
+
+- name: Get PostgreSQL database password
+  set_fact:
+    zabbix_server_postgresql_database_password: '{{ lookup("password",secret + "/credentials/" + ansible_fqdn + "/zabbix/postgresql/" + zabbix_server_database_username + "/password") }}'
+  when: (secret is defined and secret) and (zabbix_server_database_connector is defined and zabbix_server_database_connector and zabbix_server_database_connector == 'pgsql')
+
+
+# ---- Database Postgresql ----
+
+- name: Create PostgreSQL role if PostgreSQL enabled
+  postgresql_user: name='{{ zabbix_server_database_username }}'
+                   password='{{ zabbix_server_postgresql_database_password }}' encrypted=False
+                   port='{{ zabbix_server_database_port }}'
+                   state=present
+  sudo_user: 'postgres'
+  when: zabbix_server_database_connector is defined and zabbix_server_database_connector == 'pgsql'
+
+- name: Create PostgreSQL database if PostgreSQL enabled
+  postgresql_db: name='{{ zabbix_server_database_database }}'
+                 owner='{{ zabbix_server_database_username }}'
+                 port='{{ zabbix_server_database_port }}'
+                 state=present template='template1'
+  sudo_user: 'postgres'
+  when: zabbix_server_database_connector is defined and zabbix_server_database_connector == 'pgsql'
+  register: zabbix_server_database_psql
+
+- name: Create .pgpass file
+  copy: content="{{zabbix_server_database_hostname}}:{{zabbix_server_database_port}}:{{zabbix_server_database_database}}:{{zabbix_server_database_username}}:{{zabbix_server_postgresql_database_password}}"
+        mode=0600
+        dest="~/.pgpass"
+  when: zabbix_server_postgresql_database_password is defined
+
+- name: Populate Postgresql
+  shell: |
+    zcat /usr/share/zabbix-server-pgsql/schema.sql.gz | psql --user {{zabbix_server_database_username}} -h {{zabbix_server_database_hostname}} -d {{zabbix_server_database_database}} && 
+    zcat /usr/share/zabbix-server-pgsql/images.sql.gz | psql --user {{zabbix_server_database_username}} -h {{zabbix_server_database_hostname}} -d {{zabbix_server_database_database}} &&
+    zcat /usr/share/zabbix-server-pgsql/data.sql.gz | psql --user {{zabbix_server_database_username}} -h {{zabbix_server_database_hostname}} -d {{zabbix_server_database_database}}
+  when: zabbix_server_database_psql is defined and zabbix_server_database_psql.changed
+
+# ---- Database MySQL ----
+
+- name: Populate MySQL database
+  shell: |
+    zcat /usr/share/zabbix-server-mysql/schema.sql.gz | mysql -h {{ zabbix_server_database_hostname }} --port={{ zabbix_server_database_port }} -u {{ zabbix_server_database_username }} --password={{ zabbix_server_database_password }} {{ zabbix_server_database_database }} &&
+    zcat /usr/share/zabbix-server-mysql/images.sql.gz | mysql -h {{ zabbix_server_database_hostname }} --port={{ zabbix_server_database_port }} -u {{ zabbix_server_database_username }} --password={{ zabbix_server_database_password }} {{ zabbix_server_database_database }} &&
+    zcat /usr/share/zabbix-server-mysql/data.sql.gz   | mysql -h {{ zabbix_server_database_hostname }} --port={{ zabbix_server_database_port }} -u {{ zabbix_server_database_username }} --password={{ zabbix_server_database_password }} {{ zabbix_server_database_database }}
+  args:
+    creates: '/etc/zabbix/zabbix.conf.php'
+  when: zabbix_server_database_connector == 'mysql'
+
+# ---- Configuration ----
+
+- name: Configure zabbix-php-frontend
+  template:
+    src: 'zabbix.conf.php.j2'
+    dest: '/etc/zabbix/zabbix.conf.php'
+    owner: "{{zabbix_server_user}}"
+    group: "{{zabbix_server_group}}"
+    mode: '0644'
+
+- name: Configure zabbix-php-frontend
+  template:
+    src: 'zabbix_server.conf.j2'
+    dest: '/etc/zabbix/zabbix_server.conf'
+    owner: "root"
+    group: "root"
+    mode: '0644'
+
+- name: Configure to run as daemon
+  lineinfile:
+   dest: '/etc/default/zabbix-server'
+   regexp: '^START='
+   line: 'START=yes'
+   state: 'present'
+   create: True
+   backup: false
+
+- service: name=zabbix-server state=restarted enabled=yes
+

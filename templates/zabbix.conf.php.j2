@@ -1,0 +1,30 @@
+<?php
+// {{ ansible_managed }}
+global $DB;
+
+// Valid types are MYSQL, SQLITE3 or POSTGRESQL
+{% if zabbix_server_database_connector is defined and zabbix_server_database_connector == 'mysql' %}
+$DB["TYPE"]                     = 'MYSQL';
+{% endif %}
+{% if zabbix_server_database_connector is defined and zabbix_server_database_connector == 'pgsql' %}
+$DB["TYPE"]                     = 'POSTGRESQL';
+{% endif %}
+$DB["SERVER"]                   = '{{ zabbix_server_database_hostname }}';
+$DB["PORT"]                     = '{{ zabbix_server_database_port }}';
+
+$DB["DATABASE"]                 = '{{ zabbix_server_database_database }}';
+$DB["USER"]                     = '{{ zabbix_server_database_username }}';
+{% if zabbix_server_database_password is defined and zabbix_server_database_connector == 'mysql' %}
+$DB["PASSWORD"]                 = '{{ zabbix_server_database_password }}';
+{% endif %}
+{% if zabbix_server_postgresql_database_password is defined and zabbix_server_database_connector == 'pgsql' %}
+$DB["PASSWORD"]                 = '{{ zabbix_server_postgresql_database_password }}';
+{% endif %}
+$DB["SCHEMA"]                   = '';
+
+$ZBX_SERVER                     = '{{ zabbix_server_host }}';
+$ZBX_SERVER_PORT                = '{{ zabbix_server_port }}';
+$ZBX_SERVER_NAME                = '{{ zabbix_server_main_domain[0] }}';
+
+$IMAGE_FORMAT_DEFAULT   = IMAGE_FORMAT_PNG;
+?>

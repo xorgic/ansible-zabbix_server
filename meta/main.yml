@@ -1,0 +1,61 @@
+---
+
+dependencies:
+
+  - role: debops.secret
+
+  - role: debops.etc_services
+    etc_services_dependent_list:
+
+      - name: 'Zabbix'
+        port: '{{zabbix_server_port}}'
+        comment: 'Zabbix'
+
+  - role: debops.mysql
+    when: (zabbix_server_dependencies is defined and zabbix_server_dependencies) and
+          (zabbix_server_database_connector is defined and zabbix_server_database_connector and zabbix_server_database_connector == 'mysql')
+
+    mysql_databases:
+      - name: '{{ zabbix_server_database_database }}'
+        state: 'present'
+
+    mysql_users:
+      - name: '{{ zabbix_server_database_username }}'
+        host: '{{ zabbix_server_database_hostname }}'
+        priv: '{{ zabbix_server_database_database }}.*:ALL'
+        state: 'present'
+
+  - role: debops.postgresql
+    when: (zabbix_server_dependencies is defined and zabbix_server_dependencies) and
+          (zabbix_server_database_connector is defined and zabbix_server_database_connector and zabbix_server_database_connector == 'pgsql')
+
+  - role: debops.php5
+    php5_packages: ['php5-gd','php5-pgsql','php5-ldap','php5-mysql']
+    php5_pools: [ '{{ zabbix_server_php5_pool }}' ]
+
+  - role: debops.nginx
+    nginx_servers: [ '{{ zabbix_server_nginx_server }}' ]
+    nginx_upstreams: [ '{{ zabbix_server_nginx_upstream_php5 }}' ]
+    tags: nginx
+
+galaxy_info:
+  author: 'Kim Rasmussen'
+  description: 'Install, upgrade and manage Zabbix instance'
+  company: 'DebOps'
+  license: 'GNU General Public License v3'
+  min_ansible_version: '1.7.0'
+  platforms:
+  - name: Ubuntu
+    versions:
+    - precise
+    - quantal
+    - raring
+    - saucy
+    - trusty
+  - name: Debian
+    versions:
+    - wheezy
+    - jessie
+  categories:
+  - development
+  - web

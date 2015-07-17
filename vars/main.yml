@@ -1,0 +1,49 @@
+---
+# Configuration for php5-fpm pool
+zabbix_server_php5_pool:
+  enabled: True
+  name: 'zabbix'
+  user: '{{ zabbix_server_user }}'
+  group: '{{ zabbix_server_group }}'
+
+  php_value:
+    post_max_size: '16M'
+    max_execution_time: '300'
+    max_input_time: '300'
+
+# nginx configuration - PHP5 upstream
+zabbix_server_nginx_upstream_php5:
+  enabled: True
+  name: 'php5_zabbix'
+  type: 'php5'
+  php5: 'zabbix'
+
+# nginx configuration - Zabbix server
+zabbix_server_nginx_server:
+  by_role: 'debops.zabbix_server'
+  enabled: True
+  type: 'php5'
+  name: '{{ zabbix_server_main_domain }}'
+  root: '/usr/share/zabbix'
+  access_policy: '{{ zabbix_server_nginx_access_policy }}'
+  auth_basic_realm: '{{ zabbix_server_nginx_auth_realm }}'
+  index: 'index.php index.html index.htm'
+
+  options: |
+    autoindex off;
+    client_max_body_size 25M;
+    client_body_buffer_size 128k;
+  location:
+    '/': |
+      try_files  $uri $uri/ =404;
+  php5: 'php5_zabbix'
+  php5_options: |
+      fastcgi_intercept_errors        on;
+      fastcgi_ignore_client_abort     off;
+      fastcgi_connect_timeout         300;
+      fastcgi_send_timeout            180;
+      fastcgi_read_timeout            300;
+      fastcgi_buffer_size             128k;
+      fastcgi_buffers               4 256k;
+      fastcgi_busy_buffers_size       256k;
+      fastcgi_temp_file_write_size    256k;
