@@ -27,7 +27,7 @@ into your playbook.
 
 ### Authors and license
 
-`gitlab` role was written by:
+`zabbix_server` role was written by:
 - Kim Rasmussen | [e-mail](mailto:mail@khh.nu) | [GitHub](https://github.com/xorgic)
 
 License: [GPLv3](https://tldrlegal.com/license/gnu-general-public-license-v3-%28gpl-3%29)
